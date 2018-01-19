@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.tedu.ttms.product.dao.TeamDao">
+
+	<sql id="queryWhereId">
+		<where>
+			<if test="valid!=null">
+				<!-- p.name like concat("%",#{projectName},"%") -->
+				t.valid = #{valid}
+			</if>
+			<if test="projectId!=null">
+				and t.projectId = #{projectId}
+			</if>
+		</where>  
+	</sql>
+	<select id="findObjects"  resultType="map">
+		select t.*,p.id projectId,
+		p.name projectName
+		from tms_projects p join tms_teams t
+		on t.projectId=p.id
+		<include refid="queryWhereId"/>
+		order by createdTime desc
+		limit #{startIndex},#{pageSize}
+    </select>
+    <select id="getRowCount"  resultType="int">
+		select count(*)
+		from tms_projects p join tms_teams t
+		on t.projectId=p.id
+		<include refid="queryWhereId"/>
+    </select>
+    <insert id="insertObject" parameterType="team">
+		insert into tms_teams
+		(name , projectId , valid , note , createdTime , modifiedTime , createdUser , modifiedUser)
+		values
+		(#{name},#{projectId},#{valid},#{note},NOW(),NOW(),#{createdUser},#{modifiedUser})
+    </insert>
+    
+    <!-- 根据ID执行查找操作 -->
+    <select id="findObjectById" resultType="team">
+ 		select * from tms_teams where id = #{id}
+    </select>
+    <!-- 根据团ID更新团信息 -->
+    <update id="updateObject" parameterType="team">
+ 		update tms_teams 
+ 		set 
+ 		name = #{name} , 
+ 		projectId = #{projectId} , 
+ 		valid = #{valid} , 
+ 		note = #{note}, 
+ 		modifiedTime = NOW() , 
+ 		modifiedUser = #{modifiedUser}
+ 		where id = #{id}
+    </update>
+    <!-- 执行禁用和启用操作 -->
+    <update id="validById">
+		update tms_teams set 
+		valid = #{valid}
+		where id in
+		<if test="ids!=null">
+			<foreach collection="ids" open="(" close=")" separator="," item="item">
+				#{item}
+			</foreach>
+		</if>
+    </update>
+    
+</mapper>
+
+
+
+
+
+
+
+

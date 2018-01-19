@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.tedu.ttms.product.dao.ProjectDao">
+    <!-- 查询项目的ID和name -->
+    <select id="findPrjIdAndNames" resultType="map">
+    		select id,name from tms_projects where valid=1;
+    </select>
+    <update id="updateObject"  parameterType="project">
+        update tms_projects
+        set name=#{name},code=#{code},
+        beginDate=#{beginDate},endDate=#{endDate},
+        valid=#{valid},note=#{note},
+        modifiedTime=now(),modifiedUser=#{modifiedUser}
+        where id=#{id}
+    </update>
+    
+    <select id="findObjectById" 
+            resultType="project">
+            select * 
+            from tms_projects
+            where id=#{id}        
+    </select>
+    
+    <insert id="insertObject"
+            parameterType="project">
+        insert into tms_projects
+        (name,code,beginDate,endDate,
+         valid,note,createdTime,modifiedTime,
+         createdUser,modifiedUser)
+        values(
+         #{name},#{code},#{beginDate},#{endDate},
+         #{valid},#{note},now(),now(),
+         #{createdUser},#{modifiedUser}
+         )
+    </insert>
+    
+    <!-- 执行禁用和启用操作 -->
+    <update id="validById">
+         update tms_projects
+         set valid=#{valid},
+         modifiedTime=NOW() 
+         where id=#{id}
+        <!--  where id in
+         (1,2,3)
+         <foreach collection="ids"  open="(" close=")" separator="," item="item">
+                  #{item}
+         </foreach> -->
+    </update>
+    
+    
+    <!-- 查询表中所有数据 -->
+    <select id="findObjects"
+    resultType="project">
+          select *
+          from tms_projects
+          order by createdTime desc  
+    </select>
+    <!-- 借助sql元素定义一个动态sql,其它位置需要时
+               直接借助include元素进行包含 -->
+    <sql id="queryWhereId">
+         <!-- 动态SQL
+           1)何为动态SQL
+           2)动态SQL应用场景
+           3)动态SQL的实现方式有哪些
+           -->
+          <where>
+             <if test="name!=null and name!=''">
+                 p.name like concat ("%",#{name},"%")
+             </if>
+             <if test="valid!=null">
+                and p.valid=#{valid}
+             </if>
+          </where>
+    </sql>
+    <!-- 
+     1)resultType后面的值如何使用别名替换.
+     2)#的作用是什么,能否使用$符号替换,两者有什么不同?
+     3)排序时的createTime是否可以是一个动态字段?如何获取字段的值?
+     -->
+    <select id="findPageObjects"
+        resultType="project">
+          select p.*, s.name deptName,p.deptId
+          from sys_organizations s join  tms_projects p on p.deptId = s.id
+          <include refid="queryWhereId"/>
+          order by ${orderBy} desc 
+          limit #{startIndex},#{pageSize} 
+    </select>
+    <!-- resultType后的int是否可以修改为integer,
+                这个integer是否可以大写. -->
+    <select id="getRowCount"
+            resultType="int">
+         select count(*)
+         from tms_projects p join  sys_organizations s on p.deptId = s.id
+         <include refid="queryWhereId"/>
+    </select>
+
+</mapper>
+
